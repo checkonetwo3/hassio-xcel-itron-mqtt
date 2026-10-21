@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # ==============================================================================
 # Home Assistant Community Add-on: Xcel iTron2MQTT
-# Runs Xcel iTron2MQTT
+# Runs Xcel iTron2MQTT (supports up to 2 meters)
 # ==============================================================================
 bashio::log.info "Starting Xcel iTron2MQTT"
 
@@ -23,15 +23,8 @@ else # Use HA Supervisor service API to get MQTT config
     MQTT_PASSWORD=$(bashio::services mqtt "password")
     MQTT_PORT=$(bashio::services mqtt "port")
 fi
-METER_IP=$(bashio::config 'meter_ip')
-METER_PORT=$(bashio::config 'meter_port')
 
-# Persistent Storage
-CERT_DIR=$(bashio::config 'cert_dir')
-CERT_PATH=${CERT_DIR}/$(bashio::config 'cert_file')
-KEY_PATH=${CERT_DIR}/$(bashio::config 'key_file')
-
-# Export variables
+# Export MQTT variables (shared by both meters)
 export MQTT_SERVER
 export MQTT_USER
 export MQTT_PASSWORD
@@ -41,16 +34,53 @@ fi
 if bashio::var.defined "MQTT_TOPIC_PREFIX" && bashio::var.has_value "$MQTT_TOPIC_PREFIX"; then
     export MQTT_TOPIC_PREFIX
 fi
-export METER_IP
-export METER_PORT
-export CERT_PATH
-export KEY_PATH
+
 if bashio::config.has_value 'loglevel'; then
     export LOGLEVEL=$(bashio::config 'loglevel')
 fi
 
-# Log information
-bashio::log.info "Meter config: ${METER_IP}:${METER_PORT}"
+# --- Meter 2 (optional, runs in background) ---
+if bashio::config.has_value 'meter_ip_2'; then
+    METER_IP_2=$(bashio::config 'meter_ip_2')
+    METER_PORT_2=$(bashio::config 'meter_port_2' 8081)
+    CERT_DIR=$(bashio::config 'cert_dir')
+
+    if bashio::config.has_value 'cert_file_2'; then
+        CERT_PATH_2="${CERT_DIR}/$(bashio::config 'cert_file_2')"
+    else
+        CERT_PATH_2="${CERT_DIR}/cert2.pem"
+    fi
+    if bashio::config.has_value 'key_file_2'; then
+        KEY_PATH_2="${CERT_DIR}/$(bashio::config 'key_file_2')"
+    else
+        KEY_PATH_2="${CERT_DIR}/key2.pem"
+    fi
+
+    bashio::log.info "Meter 2 config: ${METER_IP_2}:${METER_PORT_2}"
+
+    # Launch meter 2 in the background
+    METER_IP="${METER_IP_2}" \
+    METER_PORT="${METER_PORT_2}" \
+    CERT_PATH="${CERT_PATH_2}" \
+    KEY_PATH="${KEY_PATH_2}" \
+    python3 -Wignore /opt/xcel_itron2mqtt/main.py &
+
+    bashio::log.info "Meter 2 process started (PID $!)"
+fi
+
+# --- Meter 1 (foreground) ---
+METER_IP=$(bashio::config 'meter_ip')
+METER_PORT=$(bashio::config 'meter_port')
+CERT_DIR=$(bashio::config 'cert_dir')
+CERT_PATH=${CERT_DIR}/$(bashio::config 'cert_file')
+KEY_PATH=${CERT_DIR}/$(bashio::config 'key_file')
+
+export METER_IP
+export METER_PORT
+export CERT_PATH
+export KEY_PATH
+
+bashio::log.info "Meter 1 config: ${METER_IP}:${METER_PORT}"
 bashio::log.info "MQTT server config: ${MQTT_SERVER}:${MQTT_PORT}"
 
 cd /opt/xcel_itron2mqtt || return

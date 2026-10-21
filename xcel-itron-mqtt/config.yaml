@@ -1,12 +1,11 @@
-name: "Xcel iTron MQTT"
-description: "Bridge from Xcel iTron smart meters to MQTT"
-url: "https://www.github.com/wingrunr21/hassio-xcel-itron-mqtt"
-version: "1.7.1"
-slug: "xcel-itron-mqtt"
+name: "Xcel iTron MQTT (Multi-Meter)"
+description: "Bridge from one or two Xcel iTron smart meters to MQTT"
+url: "https://github.com/checkonetwo3/hassio-xcel-itron-mqtt"
+version: "1.8.0"
+slug: "xcel-itron-mqtt-multi"
 arch:
   - aarch64
   - amd64
-image: ghcr.io/wingrunr21/{arch}-xcel-itron-mqtt
 init: false
 services:
   - mqtt:need
@@ -28,6 +27,11 @@ schema:
   cert_dir: str?
   cert_file: str?
   key_file: str?
+  meter_ip_2: str?
+  meter_port_2: port?
+  lfdi_2: str?
+  cert_file_2: str?
+  key_file_2: str?
   loglevel: list(DEBUG|INFO|WARNING|ERROR|CRITICAL)?
   mqtt:
     server: str?

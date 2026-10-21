@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # ==============================================================================
 # Home Assistant Community Add-on: Xcel iTron2MQTT
-# Initializes Xcel iTron2MQTT
+# Initializes Xcel iTron2MQTT (supports up to 2 meters)
 # ==============================================================================
 
 bashio::log.info "Initializing Xcel iTron2MQTT"
@@ -49,3 +49,40 @@ fi
 # need meter_ip and meter_port
 bashio::config.require 'meter_ip'
 bashio::config.require 'meter_port'
+
+# --- Meter 2 (optional) ---
+if bashio::config.has_value 'meter_ip_2'; then
+  bashio::log.info "Meter 2 configured — initializing certs"
+
+  declare cert_path_2
+  declare key_path_2
+
+  # Default meter 2 cert/key names if not specified
+  if bashio::config.has_value 'cert_file_2'; then
+    cert_path_2="${cert_dir}/$(bashio::config 'cert_file_2')"
+  else
+    cert_path_2="${cert_dir}/cert2.pem"
+    bashio::addon.option "cert_file_2" "cert2.pem"
+  fi
+  if bashio::config.has_value 'key_file_2'; then
+    key_path_2="${cert_dir}/$(bashio::config 'key_file_2')"
+  else
+    key_path_2="${cert_dir}/key2.pem"
+    bashio::addon.option "key_file_2" "key2.pem"
+  fi
+
+  if ! bashio::fs.file_exists "${cert_path_2}"; then
+    bashio::log.info "Meter 2 cert and key files missing. Generating..."
+    openssl req -x509 -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout "${key_path_2}" -out "${cert_path_2}" -sha256 -days 1094 -subj '/CN=MeterReaderHanClient' -addext "certificatePolicies = critical,1.3.6.1.4.1.40732.2.2" -addext "keyUsage = critical,digitalSignature" || \
+      bashio::exit.nok 'Failed to generate keys for meter 2 communication'
+  fi
+
+  if bashio::config.is_empty "lfdi_2"; then
+    bashio::log.info "LFDI_2 missing. Reading from meter 2 certs"
+    lfdi_2=$(openssl x509 -noout -fingerprint -SHA256 -inform pem -in "${cert_path_2}" | sed -e 's/://g' -e 's/SHA256 Fingerprint=//g' | cut -c1-40)
+    bashio::log.info "LFDI_2: ${lfdi_2}"
+    bashio::addon.option "lfdi_2" "${lfdi_2}"
+  fi
+
+  bashio::log.info "Meter 2 initialization complete"
+fi

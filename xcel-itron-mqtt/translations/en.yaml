@@ -1,20 +1,32 @@
 ---
 configuration:
   meter_ip:
-    name: Meter IP
-    description: The IP address of your meter
+    name: Meter 1 IP
+    description: The IP address of your first meter
   meter_port:
-    name: Meter Port
-    description: The port of your meter (default 8081)
+    name: Meter 1 Port
+    description: The port of your first meter (default 8081)
   cert_dir:
     name: Certificate Directory
     description: The directory to store the certificate and key (default /config/certs)
   cert_file:
-    name: Certificate File
-    description: The name of the certificate file (default cert.pem)
+    name: Meter 1 Certificate File
+    description: The name of the certificate file for meter 1 (default cert.pem)
   key_file:
-    name: Key File
-    description: The name of the key file (default key.pem)
+    name: Meter 1 Key File
+    description: The name of the key file for meter 1 (default key.pem)
+  meter_ip_2:
+    name: Meter 2 IP (optional)
+    description: The IP address of your second meter (leave empty if you only have one meter)
+  meter_port_2:
+    name: Meter 2 Port (optional)
+    description: The port of your second meter (default 8081)
+  cert_file_2:
+    name: Meter 2 Certificate File (optional)
+    description: The name of the certificate file for meter 2 (default cert2.pem)
+  key_file_2:
+    name: Meter 2 Key File (optional)
+    description: The name of the key file for meter 2 (default key2.pem)
   mqtt:
     name: MQTT Server
     description: >-
